@@ -439,36 +439,37 @@ public:
         {
             cellLeftCurrent->right = nullptr;
         }
-        if (cellRightCurrent)
+        if (current->right)
             cellRightCurrent = current->right;
         while (cellDownCurrent)
         {
             cellDownCurrent->up = cellRightCurrent;
-            cellDownCurrent = cellDownCurrent->right;
             if (cellRightCurrent)
             {
+
                 cellRightCurrent->down = cellDownCurrent;
                 cellRightCurrent = cellRightCurrent->right;
             }
+            cellDownCurrent = cellDownCurrent->right;
         }
-        if (cellRightCurrent)
+        if (current->right)
             cellRightCurrent = current->right;
         while (cellUpCurrent)
         {
             cellUpCurrent->down = cellRightCurrent;
-            cellUpCurrent = cellUpCurrent->right;
             if (cellRightCurrent)
             {
                 cellRightCurrent->up = cellUpCurrent;
                 cellRightCurrent = cellRightCurrent->right;
             }
+            cellUpCurrent = cellUpCurrent->right;
         }
+        cellRightCurrent = current->right;
         if (cellRightCurrent)
             current = current->right;
         else
             current = current->left;
     }
-
     // Function to delete the current cell and shift cell upwards
 
     void DeleteCellByUpShift()
