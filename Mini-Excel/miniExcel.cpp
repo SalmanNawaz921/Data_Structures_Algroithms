@@ -418,133 +418,63 @@ public:
     void DeleteCellByLeftShift()
     {
         Cell *currentCell = current;
-        Cell *cellLeftCurrent = current->left;
-        Cell *cellRightCurrent = current->right;
-        Cell *cellUpCurrent = current->up;
-        Cell *cellDownCurrent = current->down;
-        if (start == currentCell)
-            start = cellRightCurrent;
-
-        if (cellLeftCurrent && cellRightCurrent)
+        while (currentCell->right)
         {
-            cellLeftCurrent->right = cellRightCurrent;
-            cellRightCurrent->left = cellLeftCurrent;
+            Cell *next = currentCell->right;
+            swap(currentCell->value, next->value);
+            currentCell = next;
+        }
+        if (!currentCell->right && currentCell->left)
+        {
+            currentCell->left->right = nullptr;
         }
 
-        else if (cellRightCurrent)
+        if (currentCell->up)
         {
-            cellRightCurrent->left = nullptr;
+            currentCell->up->down = nullptr;
         }
-        else
+        if (currentCell->down)
         {
-            cellLeftCurrent->right = nullptr;
+            currentCell->down->up = nullptr;
         }
-        if (current->right)
-            cellRightCurrent = current->right;
-        while (cellDownCurrent)
-        {
-            cellDownCurrent->up = cellRightCurrent;
-            if (cellRightCurrent)
-            {
-
-                cellRightCurrent->down = cellDownCurrent;
-                cellRightCurrent = cellRightCurrent->right;
-            }
-            cellDownCurrent = cellDownCurrent->right;
-        }
-        if (current->right)
-            cellRightCurrent = current->right;
-        while (cellUpCurrent)
-        {
-            cellUpCurrent->down = cellRightCurrent;
-            if (cellRightCurrent)
-            {
-                cellRightCurrent->up = cellUpCurrent;
-                cellRightCurrent = cellRightCurrent->right;
-            }
-            cellUpCurrent = cellUpCurrent->right;
-        }
-        cellRightCurrent = current->right;
-        if (cellRightCurrent)
-            current = current->right;
-        else
-            current = current->left;
     }
+
     // Function to delete the current cell and shift cell upwards
 
     void DeleteCellByUpShift()
     {
         Cell *currentCell = current;
-        Cell *cellLeftCurrent = current->left;
-        Cell *cellRightCurrent = current->right;
-        Cell *cellUpCurrent = current->up;
-        Cell *cellDownCurrent = current->down;
-        if (start == currentCell)
-            start = cellDownCurrent;
-
-        if (cellUpCurrent && cellDownCurrent)
+        while (currentCell->down)
         {
-            cellUpCurrent->down = cellDownCurrent;
-            cellDownCurrent->up = cellUpCurrent;
+            Cell *next = currentCell->down;
+            swap(currentCell->value, next->value);
+            currentCell = next;
         }
-        else if (cellUpCurrent)
 
-            cellUpCurrent->down = nullptr;
-
-        else
-            cellDownCurrent->up = nullptr;
-
-        if (cellRightCurrent)
-            cellRightCurrent = current->right;
-        cout << endl;
-        while (cellRightCurrent)
+        if (!currentCell->down && currentCell->up)
         {
-            cellRightCurrent->left = cellDownCurrent;
-            if (cellDownCurrent)
+            currentCell->up->down = nullptr;
+            if (currentCell->right && !currentCell->left)
             {
-                if (cellDownCurrent->left && !cellDownCurrent->down)
+                Cell *temp = currentCell->right;
+                Cell *upCell = currentCell->up;
+                while (temp && upCell)
                 {
-                    cout << endl
-                         << cellDownCurrent->value << " " << cellDownCurrent->left->value << endl;
-                    cellRightCurrent->left = cellDownCurrent->left;
-                }
-                else
-                {
-                    cellDownCurrent->right = cellRightCurrent;
-                    cellDownCurrent = cellDownCurrent->down;
+                    upCell->down = temp;
+                    temp->up = upCell;
+                    temp = temp->right;
+                    upCell = upCell->right;
                 }
             }
-            cellRightCurrent = cellRightCurrent->down;
         }
-        if (cellLeftCurrent)
-            cellLeftCurrent = current->left;
-        cellDownCurrent = current->down;
-        while (cellLeftCurrent)
+        if (currentCell->left && currentCell->right)
         {
-            cellLeftCurrent->right = cellDownCurrent;
-            cout << cellLeftCurrent->value << " ";
-            if (cellDownCurrent)
-            {
-                if (cellDownCurrent->right && !cellDownCurrent->down)
-                {
-                    cout << endl
-                         << cellDownCurrent->value << " " << cellDownCurrent->right->value << endl;
-                    cellLeftCurrent->right = cellDownCurrent->right;
-                }
-                else
-                {
-                    cellDownCurrent->left = cellLeftCurrent;
-                    cellDownCurrent = cellDownCurrent->down;
-                }
-            }
-
-            cellLeftCurrent = cellLeftCurrent->down;
+            currentCell->left->right = currentCell->right;
         }
-
-        if (current->down)
-            current = current->down;
-        else
+        if (!current->left && !current->down && current->right)
+        {
             current = current->right;
+        }
     }
 
     Cell *getMidCell()
