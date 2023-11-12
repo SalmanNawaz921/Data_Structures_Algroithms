@@ -3,7 +3,7 @@
 #include <string>
 
 using namespace std;
-
+template <typename T>
 class MiniExcel
 {
 public:
@@ -477,7 +477,315 @@ public:
         }
     }
 
-    Cell *getMidCell()
+    // Operations Section
+
+    // Function to get range sum of row/column
+
+    int GetRangeSum(Cell *rangeStart, Cell *rangeEnd)
+    {
+        bool column = whetherRoworColumn(rangeStart, rangeEnd);
+        int sum = 0;
+        if (!column)
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->right)
+            {
+                // As the value is mix of string and integer so (stoi) will help to distinguish between them
+                try
+                {
+                    int cellValue = stoi(temp->value);
+                    sum += cellValue;
+                }
+                catch (const invalid_argument &e)
+                {
+                }
+                temp = temp->right;
+            }
+            Cell *cell = new Cell(to_string(sum));
+            insertCellAtRow(rangeStart, cell);
+        }
+        else
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->down)
+            {
+                try
+                {
+                    int cellValue = stoi(temp->value);
+                    sum += cellValue;
+                }
+                catch (const invalid_argument &e)
+                {
+                }
+                temp = temp->down;
+            }
+            Cell *cell = new Cell(to_string(sum));
+            insertCellAtCol(rangeStart, cell);
+        }
+        return sum;
+    }
+
+    // Function to get range sum of row/column
+
+    int GetRangeAverage(Cell *rangeStart, Cell *rangeEnd)
+    {
+        bool column = whetherRoworColumn(rangeStart, rangeEnd);
+        int sum = 0;
+        int nos = 0;
+        if (!column)
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->right)
+            {
+                try
+                {
+                    int cellValue = stoi(temp->value);
+                    sum += cellValue;
+                    nos++;
+                }
+                catch (const invalid_argument &e)
+                {
+                }
+                temp = temp->right;
+            }
+            Cell *cell = new Cell(to_string(sum / nos));
+            insertCellAtRow(rangeStart, cell);
+        }
+        else
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->down)
+            {
+                try
+                {
+                    int cellValue = stoi(temp->value);
+                    sum += cellValue;
+                    nos++;
+                }
+                catch (const invalid_argument &e)
+                {
+                }
+                temp = temp->down;
+            }
+            Cell *cell = new Cell(to_string(sum / nos));
+            insertCellAtCol(rangeStart, cell);
+        }
+        return sum / nos;
+    }
+
+    // Function to find minimum number from a particular range
+    int GetRangeMin(Cell *rangeStart, Cell *rangeEnd)
+    {
+        bool column = whetherRoworColumn(rangeStart, rangeEnd);
+        int minNo = INT_MAX;
+        if (!column)
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->right)
+            {
+                if (temp->right && temp)
+                {
+                    try
+                    {
+                        int cellValue = stoi(temp->value);
+                        minNo = min(minNo, cellValue);
+                    }
+                    catch (const invalid_argument &e)
+                    {
+                        // Handle non-integer cell values if necessary
+                    }
+                }
+                temp = temp->right;
+            }
+            Cell *cell = new Cell(to_string(minNo));
+            insertCellAtRow(rangeStart, cell);
+        }
+        else
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->down)
+            {
+                if (temp->down && temp)
+                {
+                    try
+                    {
+                        int cellValue = stoi(temp->value);
+                        minNo = min(minNo, cellValue);
+                    }
+                    catch (const invalid_argument &e)
+                    {
+                        // Handle non-integer cell values if necessary
+                    }
+                }
+                temp = temp->down;
+            }
+            Cell *cell = new Cell(to_string(minNo));
+            insertCellAtCol(rangeStart, cell);
+        }
+        return minNo;
+    }
+    // Function to find maximum number from a particular range
+    int GetRangeMax(Cell *rangeStart, Cell *rangeEnd)
+    {
+        bool column = whetherRoworColumn(rangeStart, rangeEnd);
+        int maxNo = INT_MIN;
+        if (!column)
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->right)
+            {
+                if (temp->right && temp)
+                    try
+                    {
+                        int cellValue = stoi(temp->value);
+                        maxNo = max(maxNo, cellValue);
+                    }
+                    catch (const invalid_argument &e)
+                    {
+                        // Handle non-integer cell values if necessary
+                    }
+                temp = temp->right;
+            }
+            Cell *cell = new Cell(to_string(maxNo));
+            insertCellAtRow(rangeStart, cell);
+        }
+        else
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->down)
+            {
+                if (temp->down && temp)
+                    try
+                    {
+                        int cellValue = stoi(temp->value);
+                        maxNo = max(maxNo, cellValue);
+                    }
+                    catch (const invalid_argument &e)
+                    {
+                        // Handle non-integer cell values if necessary
+                    }
+                temp = temp->down;
+            }
+            Cell *cell = new Cell(to_string(maxNo));
+            insertCellAtCol(rangeStart, cell);
+        }
+        return maxNo;
+    }
+
+    // Function to copy the contents from particular range
+
+    vector<T> Copy(Cell *startRange, Cell *endRange)
+    {
+        vector<T> new_range;
+        bool column = whetherRoworColumn(startRange, endRange);
+        if (!column)
+        {
+            Cell *temp = startRange;
+            while (temp != endRange->right)
+            {
+                new_range.push_back(temp->value);
+                temp = temp->right;
+            }
+        }
+        else
+        {
+            Cell *temp = startRange;
+            while (temp != endRange->down)
+            {
+                new_range.push_back(temp->value);
+                temp = temp->down;
+            }
+        }
+        return new_range;
+    }
+    // Function to cut the contents from particular range
+
+    vector<T> Cut(Cell *startRange, Cell *endRange)
+    {
+        vector<T> new_range;
+        bool column = whetherRoworColumn(startRange, endRange);
+        if (!column)
+        {
+            Cell *temp = startRange;
+            while (temp != endRange->right)
+            {
+                new_range.push_back(temp->value);
+                temp->value = " ";
+                temp = temp->right;
+            }
+        }
+        else
+        {
+            Cell *temp = startRange;
+            while (temp != endRange->down)
+            {
+                new_range.push_back(temp->value);
+                temp->value = " ";
+                temp = temp->down;
+            }
+        }
+        return new_range;
+    }
+
+    // Function to paste the data of cut/copied cells
+
+    void Paste(vector<T> &data, string rowOrCol)
+    {
+        int dataIndex = 0; // Index to access the data vector
+        Cell *currentCell = current;
+
+        if (rowOrCol == "row")
+        {
+            currentCell = rowStartCell(current);
+            while (dataIndex < data.size())
+            {
+                currentCell->value = data[dataIndex];
+                dataIndex++;
+                if (dataIndex < data.size())
+                {
+                    if (currentCell->right)
+                    {
+                        currentCell = currentCell->right;
+                    }
+                    else
+                    {
+                        // setCurrent(temp);
+                        Cell *newCell = new Cell(" ");
+                        currentCell->right = newCell;
+                        newCell->left = currentCell;
+                        currentCell = newCell;
+                    }
+                }
+            }
+        }
+        else
+        {
+            currentCell = colStartCell(current);
+            while (dataIndex < data.size())
+            {
+                if (dataIndex < data.size())
+
+                {
+                    currentCell->value = data[dataIndex];
+                    dataIndex++;
+                    if (currentCell->down)
+                    {
+                        currentCell = currentCell->down;
+                    }
+                    else
+                    {
+                        Cell *newCell = new Cell(" ");
+                        currentCell->down = newCell;
+                        newCell->up = currentCell;
+                        currentCell = newCell;
+                    }
+                }
+            }
+        }
+    }
+
+    Cell *
+    getMidCell()
     {
         int midRow = rows / 2;
         int midCol = cols / 2;
@@ -539,10 +847,44 @@ private:
         }
         return currentCell;
     }
+    bool whetherRoworColumn(Cell *rangeStart, Cell *rangeEnd)
+    {
+        Cell *temp = rangeStart;
+        while (temp != nullptr)
+        {
+            if (temp == rangeEnd)
+                return true;
+            temp = temp->down;
+        }
+        return false;
+    }
+
+    void insertCellAtRow(Cell *current, Cell *cell)
+    {
+        Cell *temp = current;
+        while (temp->right)
+            temp = temp->right;
+        temp->right = cell;
+        cell->left = temp;
+    }
+    void insertCellAtCol(Cell *current, Cell *cell)
+    {
+        Cell *temp = current;
+        while (temp->down)
+            temp = temp->down;
+        temp->down = cell;
+        cell->up = temp;
+    }
+
+    void setCellValue(int rowIndex, int colIndex, T value)
+    {
+        Cell *cell = getCell(rowIndex, colIndex);
+        cell->value = value;
+    }
 };
 
 int main()
 {
-    MiniExcel excel;
+    MiniExcel<string> excel;
     excel.displayGrid();
 }
