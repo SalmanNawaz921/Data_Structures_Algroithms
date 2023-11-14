@@ -1,22 +1,102 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 #include <string>
+#include <limits.h>
+#include <conio.h>
+#include <windows.h>
+#include <iomanip>
+#include <cstring>
+#include <algorithm>
 
 using namespace std;
+
+enum Color
+{
+    Reset = 0,
+    Green = 32,  // Green text
+    Yellow = 33, // Yellow text
+    Blue = 34,   // Blue text
+    Red = 91     // Red text
+};
+
+
+
+
 template <typename T>
 class MiniExcel
 {
 public:
+    int actRow = 3;
+    int actCol = 3;
+    void gotoxy(int x, int y)
+    {
+        COORD coordinates;
+        coordinates.X = x;
+        coordinates.Y = y;
+        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coordinates);
+    }
+
+    class Iterator
+{
+    typename MiniExcel<T>::Cell *current;
+
+public:
+    Iterator(typename MiniExcel<T>::Cell *current) : current(current)
+    {
+    }
+
+    T &operator*()
+    {
+        if (current)
+            return current->value;
+        throw std::out_of_range("Iterator out of bounds");
+    }
+
+    Iterator &operator++()
+    {
+        if (current)
+            current = current->down;
+        return *this;
+    }
+
+    Iterator operator++(int)
+    {
+        if (current)
+            current = current->right;
+        return *this;
+    }
+
+    Iterator &operator--()
+    {
+        if (current)
+            current = current->up;
+        return *this;
+    }
+    Iterator &operator--(int)
+    {
+        if (current)
+            current = current->left;
+        return *this;
+    }
+
+    bool operator!=(const Iterator &other)
+    {
+        return (current != other.current);
+    }
+};
     class Cell
     {
 
     public:
-        string value;
+        T value;
         Cell *left;
         Cell *right;
         Cell *up;
         Cell *down;
-        Cell(string value)
+        Color color;
+        Cell(T value)
         {
             this->value = value;
             left = NULL;
@@ -24,6 +104,19 @@ public:
             up = NULL;
             down = NULL;
         }
+        void setColor(Color color)
+        {
+            this->color = color;
+            cout << "\033[" << color << "m";
+        }
+        void resetColor()
+        {
+            cout << "\033[" << Reset << "m";
+        }
+
+    private:
+        int x;
+        int y;
     };
 
     MiniExcel(int rows = 5, int cols = 5)
@@ -32,40 +125,47 @@ public:
         current = nullptr;
         this->rows = rows;
         this->cols = cols;
-        initializeGrid(rows, cols, "A");
+        // if ()
+        initializeGrid(rows, cols);
+        LoadFile("excelFile.csv");
     }
 
-    void initializeGrid(int rows, int cols, string value)
-    { // Create the top-left cell.
+    void initializeGrid(int rows, int cols)
+    {
+        // Create the top-left cell.
+
         char a = 'A';
-        Cell *current_cell = new Cell(value + to_string(0));
+        Cell *current_cell = createCell(a + to_string(0));
         start = current_cell;
         current = current_cell;
 
         // Create the first row.
+
         for (int i = 0; i < cols - 1; i++)
         {
-            Cell *newCell = new Cell(char(++a) + to_string(0));
+            Cell *newCell = createCell(char(++a) + to_string(0));
             current_cell->right = newCell;
             newCell->left = current_cell;
             current_cell = newCell;
         }
+
         // Create the remaining rows.
+
         Cell *firstCellInRow = current;
-        for (int i = 1; i < rows; i++) // Fixed the loop limit to create the correct number of rows.
+        for (int i = 1; i < rows; i++)
         {
-            // int no = i - 1;
             a = 'A';
-            Cell *newRowCell = new Cell(char(a++) + to_string(i));
+            Cell *newRowCell = createCell(char(a++) + to_string(i));
             current = newRowCell;
             firstCellInRow->down = newRowCell;
             newRowCell->up = firstCellInRow;
             current_cell = newRowCell;
 
             // Create cells in the current row.
-            for (int j = 1; j < cols; j++) // Fixed the loop limit to create the correct number of cells in each row.
+
+            for (int j = 1; j < cols; j++)
             {
-                Cell *newCell = new Cell(char(a++) + to_string(i));
+                Cell *newCell = createCell(char(a++) + to_string(i));
                 current_cell->right = newCell;
                 newCell->left = current_cell;
                 current_cell = newCell;
@@ -77,20 +177,179 @@ public:
         }
     }
 
-    void displayGrid()
+    void displayGrid(MiniExcel<T> &excel)
     {
-        Cell *currentCell = start;
+        system("cls"); // Assuming you are using Windows. Use "clear" for Linux/macOS.
+
+        Cell *currentCell = excel.getStart();
+        int x = 3;
+        int y = 3;
+        this->printTheNumbers(getStart());
         while (currentCell)
         {
             Cell *row_Cell = currentCell;
             while (row_Cell)
             {
-                cout << row_Cell->value << "|";
+                printCell(row_Cell, x, y);
                 row_Cell = row_Cell->right;
+                x += 11;
             }
-            cout << endl;
+            x = 3;
+            y += 4;
+
+            cout
+                << "\n\n\n";
             currentCell = currentCell->down;
         }
+        getch();
+    }
+    void printTheNumbers(Cell *temp)
+    {
+        Cell *H = temp;
+        int i = 1;
+        int x = 8;
+        int y = 5;
+        char val = 'A';
+        while (temp != nullptr || H != nullptr)
+        {
+
+            if (temp != nullptr)
+            {
+                gotoxy(x, 1);
+                cout << "\033[31m" << i;
+                i++;
+                x += 11;
+                temp = temp->right;
+            }
+            if (H != nullptr)
+            {
+                gotoxy(1, y);
+                cout << "\033[33m" << val;
+                val = val + 1;
+                y += 5;
+                H = H->down;
+            }
+        }
+    }
+
+    void printCell(Cell *temp, int x, int y)
+    {
+        gotoxy(x, y);
+        printCellBorder(x, y);
+        temp->setColor(Blue);
+        gotoxy(x + 3, y + 2);
+        cout << "\033[34m";
+        printDataInCell(temp);
+    }
+
+    void printCellBorder(int &x, int &y)
+    {
+        cout
+            << "----------";
+        gotoxy(x, y + 1);
+        cout << "|        |";
+        gotoxy(x, y + 2);
+        cout << "|        |";
+        gotoxy(x, y + 3);
+        cout << "|        |";
+        gotoxy(x, y + 4);
+        cout << "----------";
+    }
+
+    void printDataInCell(Cell *temp)
+    {
+        cout << temp->value;
+    }
+
+    void activeCell(Cell *temp, int x, int y)
+    {
+        gotoxy(x, y);
+        temp->setColor(Yellow);
+        cout << "##########";
+        gotoxy(x, y + 1);
+        cout << "#        #";
+        gotoxy(x, y + 2);
+        cout << "#        #";
+        gotoxy(x, y + 3);
+        cout << "#        #";
+        gotoxy(x, y + 4);
+        cout << "##########";
+        gotoxy(x + 3, y + 2);
+        cout << "\033[34m";
+        printDataInCell(temp);
+    }
+
+    void MoveRight(Cell *temp)
+    {
+        if (temp->right != nullptr)
+        {
+            printCell(temp, actCol, actRow);
+            temp = temp->right;
+            setCurrent(temp);
+            actCol += 11;
+            activeCell(currentCell(), actCol, actRow);
+        }
+    }
+
+    void MoveLeft(Cell *temp)
+    {
+        if (temp->left != nullptr)
+        {
+            printCell(temp, actCol, actRow);
+            temp = temp->left;
+            setCurrent(temp);
+            actCol -= 11;
+            activeCell(currentCell(), actCol, actRow);
+        }
+    }
+    void MoveUp(Cell *temp)
+    {
+        if (temp->up != nullptr)
+        {
+            printCell(temp, actCol, actRow);
+            temp = temp->up;
+            setCurrent(temp);
+            actRow -= 4;
+            activeCell(currentCell(), actCol, actRow);
+        }
+    }
+    void MoveDown(Cell *temp)
+    {
+        if (temp->down != nullptr)
+        {
+            printCell(temp, actCol, actRow);
+            temp = temp->down;
+            setCurrent(temp);
+            actRow += 4;
+            activeCell(currentCell(), actCol, actRow);
+        }
+    }
+
+    void MoveCell(string direction)
+    {
+        Cell *temp = currentCell();
+        transform(direction.begin(), direction.end(), direction.begin(), ::toupper);
+
+        if (temp)
+        {
+            if (direction == "UP")
+                MoveUp(temp);
+            else if (direction == "DOWN")
+                MoveDown(temp);
+            else if (direction == "RIGHT")
+                MoveRight(temp);
+            else if (direction == "LEFT")
+                MoveLeft(temp);
+        }
+    }
+
+    Iterator begin()
+    {
+        return Iterator (start);
+    }
+    Iterator end()
+    {
+        return Iterator(nullptr);
     }
 
     Cell *currentCell()
@@ -99,17 +358,18 @@ public:
     }
 
     // Function to insert a row below the current cell
-    void InsertRowBelow()
+
+    void InsertRowBelow(Cell *currentCell)
     {
 
         // Create a new row
         Cell *newRow = nullptr;
-        Cell *currentRow = rowStartCell(current);
-        Cell *rowBelowCurrent = rowStartCell(current)->down;
+        Cell *currentRow = rowStartCell(currentCell);
+        Cell *rowBelowCurrent = rowStartCell(currentCell)->down;
         // Initialize newRow with space character
         for (int i = 0; currentRow != nullptr; i++)
         {
-            Cell *newRowCell = new Cell("B" + to_string(i + 1));
+            Cell *newRowCell = new Cell(" ");
             newRowCell->left = newRow;
             if (newRow != nullptr)
                 newRow->right = newRowCell;
@@ -131,16 +391,16 @@ public:
     }
 
     // Function to insert a row above the current cell
-    void InsertRowAbove()
+    void InsertRowAbove(Cell *currentCell)
     {
         // Create a new row
         Cell *newRow = nullptr;
-        Cell *currentRow = rowStartCell(current);
-        Cell *rowUpCurrent = rowStartCell(current)->up;
+        Cell *currentRow = rowStartCell(currentCell);
+        Cell *rowUpCurrent = rowStartCell(currentCell)->up;
         // Initialize newRow with space character
         for (int i = 0; currentRow != nullptr; i++)
         {
-            Cell *newRowCell = new Cell("B" + to_string(i + 1));
+            Cell *newRowCell = new Cell(" ");
             newRowCell->left = newRow;
             if (newRow != nullptr)
                 newRow->right = newRowCell;
@@ -153,12 +413,14 @@ public:
 
         newRow = rowStartCell(newRow);
         if (!rowUpCurrent)
+        {
             start = newRow;
+        }
 
         for (int i = 0; rowUpCurrent != nullptr; i++)
         {
-            rowUpCurrent->down = newRow;
             newRow->up = rowUpCurrent;
+            rowUpCurrent->down = newRow;
             rowUpCurrent = rowUpCurrent->right;
             newRow = newRow->right;
         }
@@ -166,15 +428,15 @@ public:
     }
 
     // Function to insert a column to left of the current cell
-    void InsertColumnToLeft(string val)
+
+    void InsertColumnToLeft(Cell *currentCell)
     {
-        Cell *currentColumn = colStartCell(current);
-        cout << currentColumn->value;
+        Cell *currentColumn = colStartCell(currentCell);
         Cell *columnToLeft = currentColumn->left;
         Cell *newCol = nullptr;
         for (int i = 0; currentColumn != nullptr; i++)
         {
-            Cell *newCell = new Cell(val + to_string(i));
+            Cell *newCell = new Cell(" ");
             newCell->up = newCol;
             if (newCol != nullptr)
                 newCol->down = newCell;
@@ -198,14 +460,15 @@ public:
     }
 
     // Function to insert a column to right of the current cell
-    void InsertColumnToRight(string val)
+
+    void InsertColumnToRight(Cell *currentCell)
     {
-        Cell *currentColumn = colStartCell(current);
+        Cell *currentColumn = colStartCell(currentCell);
         Cell *columnToRight = currentColumn->right;
         Cell *newCol = nullptr;
         for (int i = 0; currentColumn != nullptr; i++)
         {
-            Cell *newCell = new Cell(val + to_string(i));
+            Cell *newCell = new Cell(" ");
             newCell->up = newCol;
             if (newCol != nullptr)
                 newCol->down = newCell;
@@ -233,6 +496,10 @@ public:
         Cell *currentRow = rowStartCell(current);
         Cell *rowAboveCurrent = currentRow->up;
         Cell *rowBelowCurrent = currentRow->down;
+        if (!current->down)
+            current = currentRow->up;
+        if (!current->up)
+            current = currentRow->down;
 
         for (int i = 0; rowAboveCurrent != nullptr && rowBelowCurrent != nullptr; i++)
         {
@@ -268,6 +535,10 @@ public:
         Cell *currentCol = colStartCell(current);
         Cell *colToLeft = currentCol->left;
         Cell *colToRight = currentCol->right;
+        if (!current->left)
+            current = currentCol->right;
+        if (!current->right)
+            current = currentCol->left;
 
         for (int i = 0; colToLeft != nullptr && colToRight != nullptr; i++)
         {
@@ -304,7 +575,7 @@ public:
         Cell *currentCol = colStartCell(current);
         while (currentCol)
         {
-            currentCol->value = "";
+            currentCol->value = " ";
             currentCol = currentCol->down;
         }
     }
@@ -316,13 +587,14 @@ public:
         Cell *currentRow = rowStartCell(current);
         while (currentRow)
         {
-            currentRow->value = "";
+            currentRow->value = " ";
             currentRow = currentRow->right;
         }
     }
 
     // Function to insert a new cell and shift the current cell to right
-    void InsertCellByRightShift(string value)
+
+       void InsertCellByRightShift(T value)
     {
         Cell *newCell = new Cell(value);
         Cell *currentCell = current;
@@ -330,44 +602,58 @@ public:
         Cell *cellDownCurrent = currentCell->down;
         Cell *cellRightCurrent = currentCell->right;
         Cell *cellLeftCurrent = currentCell->left;
-        current = newCell;
+
         if (start == current)
             start = newCell;
-        while (currentCell)
+        if (!currentCell->right)
         {
-            newCell->right = currentCell;
-            if (cellLeftCurrent)
+            T val = currentCell->value;
+            currentCell->value = value;
+            currentCell->right = newCell;
+            newCell->left = currentCell;
+            newCell->value = val;
+        }
+        else
+        {
+            current = newCell;
+            while (currentCell)
             {
+                newCell->right = currentCell;
+                if (cellLeftCurrent)
+                {
+                    currentCell->left = newCell;
+                    newCell->left = cellLeftCurrent;
+                    cellLeftCurrent->right = newCell;
+                    cellLeftCurrent = cellLeftCurrent->right;
+                }
                 currentCell->left = newCell;
-                newCell->left = cellLeftCurrent;
-                cellLeftCurrent->right = newCell;
-                cellLeftCurrent = cellLeftCurrent->right;
+                newCell = currentCell;
+                currentCell = currentCell->right;
             }
-            newCell = currentCell;
-            currentCell = currentCell->right;
-        }
 
-        newCell = current;
-        while (cellUpCurrent)
-        {
-            newCell->up = cellUpCurrent;
-            cellUpCurrent->down = newCell;
-            cellUpCurrent = cellUpCurrent->right;
-            newCell = newCell->right;
-        }
-        newCell = current;
-        while (cellDownCurrent)
-        {
-            newCell->down = cellDownCurrent;
-            cellDownCurrent->up = newCell;
-            cellDownCurrent = cellDownCurrent->right;
-            newCell = newCell->right;
+            newCell = current;
+            while (cellUpCurrent)
+            {
+                newCell->up = cellUpCurrent;
+                cellUpCurrent->down = newCell;
+                cellUpCurrent = cellUpCurrent->right;
+                newCell = newCell->right;
+            }
+            newCell = current;
+            while (cellDownCurrent)
+            {
+                newCell->down = cellDownCurrent;
+                cellDownCurrent->up = newCell;
+                cellDownCurrent = cellDownCurrent->right;
+                newCell = newCell->right;
+            }
         }
         cols++;
     }
 
+
     // Function to insert a new cell and shift the current cell to down
-    void InsertCellByDownShift(string value)
+ void InsertCellByDownShift(T value)
     {
         Cell *newCell = new Cell(value);
         Cell *currentCell = current;
@@ -375,45 +661,56 @@ public:
         Cell *cellDownCurrent = currentCell->down;
         Cell *cellLeftCurrent = currentCell->left;
         Cell *cellRightCurrent = currentCell->right;
-
-        current = newCell;
-        if (start == current)
-            start = newCell;
-
-        while (currentCell)
+        if (!currentCell->down)
         {
-            newCell->down = currentCell;
-            if (cellUpCurrent)
+            T val = currentCell->value;
+            currentCell->value = value;
+            currentCell->down = newCell;
+            newCell->up = currentCell;
+            newCell->value = val;
+        }
+        else
+        {
+            current = newCell;
+            if (start == current)
+                start = newCell;
+
+            while (currentCell)
             {
+                newCell->down = currentCell;
+                if (cellUpCurrent)
+                {
+                    currentCell->up = newCell;
+                    cellUpCurrent->down = newCell;
+                    newCell->up = cellUpCurrent;
+                    cellUpCurrent = cellUpCurrent->down;
+                }
                 currentCell->up = newCell;
-                cellUpCurrent->down = newCell;
-                newCell->up = cellUpCurrent;
-                cellUpCurrent = cellUpCurrent->down;
+                newCell = currentCell;
+                currentCell = currentCell->down;
             }
-            newCell = currentCell;
-            currentCell = currentCell->down;
-        }
-        newCell = current;
-        while (cellLeftCurrent)
-        {
-            newCell->left = cellLeftCurrent;
-            cellLeftCurrent->right = newCell;
-            cellLeftCurrent = cellLeftCurrent->down;
-            newCell = newCell->down;
-        }
+            newCell = current;
+            while (cellLeftCurrent)
+            {
+                newCell->left = cellLeftCurrent;
+                cellLeftCurrent->right = newCell;
+                cellLeftCurrent = cellLeftCurrent->down;
+                newCell = newCell->down;
+            }
 
-        newCell = current;
-        while (cellRightCurrent)
-        {
-            newCell->right = cellRightCurrent;
-            cellRightCurrent->left = newCell;
-            cellRightCurrent = cellRightCurrent->down;
-            newCell = newCell->down;
+            newCell = current;
+            while (cellRightCurrent)
+            {
+                newCell->right = cellRightCurrent;
+                cellRightCurrent->left = newCell;
+                cellRightCurrent = cellRightCurrent->down;
+                newCell = newCell->down;
+            }
         }
         rows++;
     }
 
-    // Function to delete the current cell and shift cell leftwards
+    // Function to delete the cell and shift the current cell to left
 
     void DeleteCellByLeftShift()
     {
@@ -439,7 +736,7 @@ public:
         }
     }
 
-    // Function to delete the current cell and shift cell upwards
+    // Function to delete the cell and shift the current cell to up
 
     void DeleteCellByUpShift()
     {
@@ -480,11 +777,10 @@ public:
     // Operations Section
 
     // Function to get range sum of row/column
-
-    int GetRangeSum(Cell *rangeStart, Cell *rangeEnd)
+    double GetRangeSum(Cell *rangeStart, Cell *rangeEnd)
     {
         bool column = whetherRoworColumn(rangeStart, rangeEnd);
-        int sum = 0;
+        double sum = 0;
         if (!column)
         {
             Cell *temp = rangeStart;
@@ -493,7 +789,7 @@ public:
                 // As the value is mix of string and integer so (stoi) will help to distinguish between them
                 try
                 {
-                    int cellValue = stoi(temp->value);
+                    double cellValue = stod(temp->value);
                     sum += cellValue;
                 }
                 catch (const invalid_argument &e)
@@ -501,8 +797,6 @@ public:
                 }
                 temp = temp->right;
             }
-            Cell *cell = new Cell(to_string(sum));
-            insertCellAtRow(rangeStart, cell);
         }
         else
         {
@@ -511,7 +805,7 @@ public:
             {
                 try
                 {
-                    int cellValue = stoi(temp->value);
+                    double cellValue = stod(temp->value);
                     sum += cellValue;
                 }
                 catch (const invalid_argument &e)
@@ -519,19 +813,17 @@ public:
                 }
                 temp = temp->down;
             }
-            Cell *cell = new Cell(to_string(sum));
-            insertCellAtCol(rangeStart, cell);
         }
         return sum;
     }
 
-    // Function to get range sum of row/column
+    // Function to get average of row/column
 
-    int GetRangeAverage(Cell *rangeStart, Cell *rangeEnd)
+    double GetRangeAverage(Cell *rangeStart, Cell *rangeEnd)
     {
         bool column = whetherRoworColumn(rangeStart, rangeEnd);
-        int sum = 0;
-        int nos = 0;
+        double sum = 0;
+        double nos = 0;
         if (!column)
         {
             Cell *temp = rangeStart;
@@ -539,7 +831,7 @@ public:
             {
                 try
                 {
-                    int cellValue = stoi(temp->value);
+                    double cellValue = stod(temp->value);
                     sum += cellValue;
                     nos++;
                 }
@@ -548,8 +840,6 @@ public:
                 }
                 temp = temp->right;
             }
-            Cell *cell = new Cell(to_string(sum / nos));
-            insertCellAtRow(rangeStart, cell);
         }
         else
         {
@@ -558,7 +848,7 @@ public:
             {
                 try
                 {
-                    int cellValue = stoi(temp->value);
+                    double cellValue = stod(temp->value);
                     sum += cellValue;
                     nos++;
                 }
@@ -567,17 +857,15 @@ public:
                 }
                 temp = temp->down;
             }
-            Cell *cell = new Cell(to_string(sum / nos));
-            insertCellAtCol(rangeStart, cell);
         }
         return sum / nos;
     }
 
     // Function to find minimum number from a particular range
-    int GetRangeMin(Cell *rangeStart, Cell *rangeEnd)
+    double GetRangeMin(Cell *rangeStart, Cell *rangeEnd)
     {
         bool column = whetherRoworColumn(rangeStart, rangeEnd);
-        int minNo = INT_MAX;
+        double minNo = INT_MAX;
         if (!column)
         {
             Cell *temp = rangeStart;
@@ -587,7 +875,7 @@ public:
                 {
                     try
                     {
-                        int cellValue = stoi(temp->value);
+                        double cellValue = stod(temp->value);
                         minNo = min(minNo, cellValue);
                     }
                     catch (const invalid_argument &e)
@@ -597,8 +885,6 @@ public:
                 }
                 temp = temp->right;
             }
-            Cell *cell = new Cell(to_string(minNo));
-            insertCellAtRow(rangeStart, cell);
         }
         else
         {
@@ -609,7 +895,7 @@ public:
                 {
                     try
                     {
-                        int cellValue = stoi(temp->value);
+                        double cellValue = stod(temp->value);
                         minNo = min(minNo, cellValue);
                     }
                     catch (const invalid_argument &e)
@@ -619,16 +905,14 @@ public:
                 }
                 temp = temp->down;
             }
-            Cell *cell = new Cell(to_string(minNo));
-            insertCellAtCol(rangeStart, cell);
         }
         return minNo;
     }
     // Function to find maximum number from a particular range
-    int GetRangeMax(Cell *rangeStart, Cell *rangeEnd)
+    double GetRangeMax(Cell *rangeStart, Cell *rangeEnd)
     {
         bool column = whetherRoworColumn(rangeStart, rangeEnd);
-        int maxNo = INT_MIN;
+        double maxNo = INT_MIN;
         if (!column)
         {
             Cell *temp = rangeStart;
@@ -637,7 +921,7 @@ public:
                 if (temp->right && temp)
                     try
                     {
-                        int cellValue = stoi(temp->value);
+                        double cellValue = stod(temp->value);
                         maxNo = max(maxNo, cellValue);
                     }
                     catch (const invalid_argument &e)
@@ -646,8 +930,6 @@ public:
                     }
                 temp = temp->right;
             }
-            Cell *cell = new Cell(to_string(maxNo));
-            insertCellAtRow(rangeStart, cell);
         }
         else
         {
@@ -657,7 +939,7 @@ public:
                 if (temp->down && temp)
                     try
                     {
-                        int cellValue = stoi(temp->value);
+                        double cellValue = stod(temp->value);
                         maxNo = max(maxNo, cellValue);
                     }
                     catch (const invalid_argument &e)
@@ -666,10 +948,34 @@ public:
                     }
                 temp = temp->down;
             }
-            Cell *cell = new Cell(to_string(maxNo));
-            insertCellAtCol(rangeStart, cell);
         }
         return maxNo;
+    }
+
+    // Function to find counting number from a particular range
+    int GetRangeCount(Cell *rangeStart, Cell *rangeEnd)
+    {
+        bool column = whetherRoworColumn(rangeStart, rangeEnd);
+        int count = 0;
+        if (!column)
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->right)
+            {
+                count++;
+                temp = temp->right;
+            }
+        }
+        else
+        {
+            Cell *temp = rangeStart;
+            while (temp != rangeEnd->down)
+            {
+                count++;
+                temp = temp->down;
+            }
+        }
+        return count;
     }
 
     // Function to copy the contents from particular range
@@ -729,12 +1035,12 @@ public:
 
     // Function to paste the data of cut/copied cells
 
-    void Paste(vector<T> &data, string rowOrCol)
+    void Paste(vector<T> &data)
     {
         int dataIndex = 0; // Index to access the data vector
         Cell *currentCell = current;
 
-        if (rowOrCol == "row")
+        if (data.size() <= rows)
         {
             currentCell = rowStartCell(current);
             while (dataIndex < data.size())
@@ -784,8 +1090,9 @@ public:
         }
     }
 
-    Cell *
-    getMidCell()
+    // Function to get middle cell position
+
+    Cell *getMidCell()
     {
         int midRow = rows / 2;
         int midCol = cols / 2;
@@ -800,6 +1107,8 @@ public:
         }
         return midCell;
     }
+
+    // Function to get any cell position
 
     Cell *getCell(int rowIndex, int columnIndex)
     {
@@ -817,9 +1126,145 @@ public:
         return startCell;
     }
 
+    // Function to set current cellc
+
     void setCurrent(Cell *current)
     {
         this->current = current;
+    }
+
+    // Function to get rows
+
+    int getRows()
+    {
+        return rows;
+    }
+
+    // Function to get columns
+    int getCols()
+    {
+        return cols;
+    }
+
+    // Function to set rows
+
+    void setRows(int row)
+    {
+        row = rows;
+    }
+
+    // Function to set columns
+
+    void setCols(int col)
+    {
+        col = cols;
+    }
+
+    // Function to  store the grid
+    void storeGrid(string filename)
+    {
+        ofstream grid(filename);
+        if (grid.is_open())
+        {
+            // File opened successfully, you can proceed with writing to it.
+            Cell *rowCell = start;
+            while (rowCell)
+            {
+                Cell *colCell = rowCell;
+                while (colCell)
+                {
+                    grid << colCell->value << ",";
+                    colCell = colCell->right;
+                }
+                grid << "\n";
+                rowCell = rowCell->down;
+            }
+            grid.close(); // Close the file when done.
+        }
+        else
+        {
+            // Handle the case where the file couldn't be opened.
+            cerr << "Failed to open the file for writing." << endl;
+        }
+    }
+
+    // Function to load grid
+    bool LoadFile(string filename)
+    {
+        ifstream file(filename);
+
+        if (file.is_open())
+        {
+            string line;
+            Cell *currentRow = start;
+            int row = 0;
+
+            while (getline(file, line))
+            {
+                istringstream iss(line);
+                string value;
+
+                int col = 0;
+                while (getline(iss, value, ','))
+                {
+
+                    Cell *currentcell = getCell(row, col);
+                    if (currentcell != nullptr)
+                    {
+                        currentcell->value = value;
+                    }
+
+                    col++;
+                    if (col >= cols && currentcell)
+                    {
+                        Cell *colCell = colStartCell(currentcell);
+                        InsertColumnToRight(colCell);
+                    }
+                }
+
+                row++;
+                if (row >= rows)
+                {
+                    if (currentRow)
+                    {
+                        Cell *rowCell = rowStartCell(currentRow);
+                        InsertRowBelow(rowCell);
+                    }
+                }
+
+                currentRow = currentRow->down;
+            }
+
+            file.close();
+            setCurrent(getCell(0, 0));
+            return true;
+        }
+        return false;
+    }
+
+    // Function to clear entire grid
+
+    void clearGrid()
+    {
+        Cell *currentCell = start;
+        while (currentCell)
+        {
+            Cell *rowCell = currentCell;
+            while (rowCell)
+            {
+                // Assuming you have a function to set the cell value to a default or empty state
+                rowCell->value = T(); // This assigns a default-constructed value for type T
+                rowCell = rowCell->right;
+            }
+            currentCell = currentCell->down;
+        }
+    }
+
+    // Function to get the start cell
+
+    Cell *getStart()
+    {
+        return start;
     }
 
 private:
@@ -827,26 +1272,35 @@ private:
     Cell *current;
     int rows;
     int cols;
-    vector<vector<Cell *>> grid;
 
-    Cell *rowStartCell(Cell *current)
+    //                                      ************************** Private Functions To Increase Productivity **************************
+
+    // Function to get row's start cell
+
+    Cell *rowStartCell(Cell *currentRow)
     {
-        Cell *currentCell = current;
+        Cell *currentCell = currentRow;
         while (currentCell->left)
         {
             currentCell = currentCell->left;
         }
         return currentCell;
     }
-    Cell *colStartCell(Cell *current)
+
+    // Function to get column's start cell
+
+    Cell *colStartCell(Cell *currentCol)
     {
-        Cell *currentCell = current;
+        Cell *currentCell = currentCol;
         while (currentCell->up)
         {
             currentCell = currentCell->up;
         }
         return currentCell;
     }
+
+    // Function to check whether the given range is of column or row
+
     bool whetherRoworColumn(Cell *rangeStart, Cell *rangeEnd)
     {
         Cell *temp = rangeStart;
@@ -859,32 +1313,405 @@ private:
         return false;
     }
 
-    void insertCellAtRow(Cell *current, Cell *cell)
-    {
-        Cell *temp = current;
-        while (temp->right)
-            temp = temp->right;
-        temp->right = cell;
-        cell->left = temp;
-    }
-    void insertCellAtCol(Cell *current, Cell *cell)
-    {
-        Cell *temp = current;
-        while (temp->down)
-            temp = temp->down;
-        temp->down = cell;
-        cell->up = temp;
-    }
-
     void setCellValue(int rowIndex, int colIndex, T value)
     {
         Cell *cell = getCell(rowIndex, colIndex);
         cell->value = value;
     }
+
+    Cell *createCell(T value)
+    {
+        Cell *newCell = new Cell(value);
+        newCell->setColor(Yellow);
+        return newCell;
+    }
 };
+
+
+
+void printColorText(const std::string &text, int colorCode)
+{
+    cout << "\033[38;5;" << colorCode << "m" << text << "\033[0m";
+}
+
+void printLogo()
+{
+    vector<string> logoText = {
+        "                      ##                      ##     @@@@@@@@@@@    ##                     ##    @@@@@@@@@@@           @@           @@          @@@@@@@@     @@@@@@@@@@@     @@                             ",
+        "                      @@  %%              %%  @@         ##         @@ %%                  @@         ##                %%        %%           ##            ##              ##                         ",
+        "                      ##    %%           %%   ##         ##         ##   %%                ##         @@                 @@     @@            @@             @@              @@                        ",
+        "                      @@      %%        %%    @@         ##         @@     %%              @@         ##                   %%  %%            ##              ##              ##                   ",
+        "                      ##        %%     %%     ##         ##         ##       %%            ##         @@                     @@             @@               @@              @@                     ",
+        "                      @@          %%  %%      @@         ##         @@         %%          @@         ##                     %% %%          ##               ##@@@@@@        ##                                    ",
+        "                      ##            %%        ##         ##         ##           %%        ##         @@                    %%   %%         @@               @@              @@                     ",
+        "                      @@                      @@         ##         @@             %%      @@         ##                   @@      @@        ##              ##              ##                  ",
+        "                      ##                      ##         ##         ##               %%    ##         @@                 %%         %%        @@             @@              @@                  ",
+        "                      @@                      @@         ##         @@                 %%  @@         ##                %%            %%       ##            ##              ##                  ",
+        "                      ##                      ##      @@@@@@@@@@    ##                     ##     @@@@@@@@@@           @@               @@       @@@@@@@     @@@@@@@@@@@     @@@@@@@@@@@@@@                                  "};
+
+    // Color codes for a rainbow effect
+    int colorCodes[] = {9, 11, 13, 14, 12, 10};
+
+    for (int i = 0; i < logoText.size(); ++i)
+    {
+        printColorText(logoText[i], colorCodes[i % (sizeof(colorCodes) / sizeof(colorCodes[0]))]);
+        cout << endl;
+    }
+}
+
+// Helper function to check if a key is down
+bool IsKeyDown(int key)
+{
+    return GetAsyncKeyState(key) & 0x8000;
+}
+
+int printMenu()
+{
+    int opt;
+    cout << "\t\t 1. Start" << endl;
+    cout << "\t\t 2. Instructions" << endl;
+    cout << "\t\t 3. Exit" << endl;
+    cout << "\t\t Your Option.... " << endl;
+    cin >> opt;
+    return opt;
+}
+void instructionsMenu()
+{
+    cout << "\t\t\t\t\t\tInstructions!!!\t\t\n"
+         << endl;
+    cout << " \t\t\tPress UP/DOWN Keys --> To Navigate The Sheet" << endl;
+    cout << " \t\t\tPress I --> To Input The Value in a Cell" << endl;
+    cout << " \t\t\tPress B --> To Select Starting Cell For Copy/Cut/Sum etc" << endl;
+    cout << " \t\t\tPress C --> To Select Ending Cell & Call Copy()" << endl;
+    cout << " \t\t\tPress X --> To Select Ending Cell & Call Cut()" << endl;
+    cout << " \t\t\tPress V --> To Paste The Copy/Cut Data" << endl;
+    cout << " \t\t\tPress Ctrl+A --> To Add Row Above Current Cell" << endl;
+    cout << " \t\t\tPress Ctrl+B --> To Add Row Below Current Cell" << endl;
+    cout << " \t\t\tPress Ctrl+R --> To Add Column Right of Current Cell" << endl;
+    cout << " \t\t\tPress Ctrl+L --> To Add Column Left of Current Cell" << endl;
+    cout << " \t\t\tPress Shift+R --> To Add a Cell & Shift Current Cell To The Right" << endl;
+    cout << " \t\t\tPress Shift+D --> To Add a Cell & Shift Current Cell To The Down" << endl;
+    cout << " \t\t\tPress Shift+L --> To Delete a Cell & Shift Current Cell To The Left" << endl;
+    cout << " \t\t\tPress Shift+U --> To Delete a Cell & Shift Current Cell To The Up" << endl;
+    cout << " \t\t\tPress Alt+R --> To Delete a Row" << endl;
+    cout << " \t\t\tPress Alt+C --> To Delete a Column" << endl;
+    cout << " \t\t\tPress Alt+R --> To Delete a Row" << endl;
+    cout << " \t\t\tPress Alt+C --> To Delete a Column" << endl;
+    cout << " \t\t\tPress Alt+S --> To Get The Sum of Your Desired Data" << endl;
+    cout << " \t\t\tPress Alt+A --> To Get The Average of Your Desired Data" << endl;
+    cout << " \t\t\tPress Alt+M --> To Get The Maximum of Your Desired Data" << endl;
+    cout << " \t\t\tPress Alt+N --> To Get The Minimum of Your Desired Data" << endl;
+    cout << " \t\t\tPress Alt+C --> To Get The Count of Your Desired Data" << endl;
+    cout << " \t\t\tPress Ctrl+S --> To Save The File" << endl;
+    cout << " \t\t\tPress Ctrl+W --> To Save The File & Exit" << endl;
+    cout << " \t\t\tPress Escape --> To Exit" << endl;
+}
+
+void excelMenu(MiniExcel<string> &excel)
+{
+    vector<string> copyOrCut;
+    excel.setCurrent(excel.getCell(0, 0));
+    MiniExcel<string>::Cell *rangeStart = nullptr;
+    MiniExcel<string>::Cell *rangeEnd = nullptr;
+    excel.displayGrid(excel);
+    while (true)
+    {
+        // Up key for moving up
+
+        if (GetAsyncKeyState(VK_UP))
+        {
+            excel.MoveCell("UP");
+        }
+
+        // Down key for moving down
+
+        else if (GetAsyncKeyState(VK_DOWN))
+        {
+            excel.MoveCell("DOWN");
+        }
+
+        // Left key for moving left
+
+        else if (IsKeyDown(VK_LEFT))
+        {
+            excel.MoveCell("LEFT");
+        }
+
+        // Right key for moving right
+
+        else if (IsKeyDown(VK_RIGHT))
+        {
+            excel.MoveCell("RIGHT");
+        }
+
+        // Ctrl + A For Inserting Row Above Current Cell
+
+        else if (IsKeyDown(VK_CONTROL) && IsKeyDown('A'))
+        {
+            excel.InsertRowAbove(excel.currentCell());
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Ctrl + B For Inserting Row Below Current Cell
+
+        else if (IsKeyDown(VK_CONTROL) && IsKeyDown('B'))
+        {
+            excel.InsertRowBelow(excel.currentCell());
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Ctrl + R For Inserting Column To Right of Current Cell
+
+        else if (IsKeyDown(VK_CONTROL) && IsKeyDown('R'))
+        {
+            excel.InsertColumnToRight(excel.currentCell());
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Ctrl + L For Inserting Column To Left Current Cell
+
+        else if (IsKeyDown(VK_CONTROL) && IsKeyDown('L'))
+        {
+            excel.InsertColumnToLeft(excel.currentCell());
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Shift + R For Inserting a Cell & Shifting Current Cell To Right
+
+        else if (IsKeyDown(VK_SHIFT) && IsKeyDown('R'))
+        {
+            excel.InsertCellByRightShift(" ");
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Shift + D For Inserting a Cell & Shifting Current Cell To Down
+
+        else if (IsKeyDown(VK_SHIFT) && IsKeyDown('D'))
+        {
+            excel.InsertCellByDownShift(" ");
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Shift + L For Deleteing a Cell & Shifting Current Cell To Left
+
+        else if (IsKeyDown(VK_SHIFT) && IsKeyDown('L'))
+        {
+            excel.DeleteCellByLeftShift();
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Shift + U For Deleteing a Cell & Shifting Current Cell To Up
+
+        else if (IsKeyDown(VK_SHIFT) && IsKeyDown('U'))
+        {
+            excel.DeleteCellByUpShift();
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Alt + C For Deleting a Column
+
+        else if (IsKeyDown(VK_MENU) && IsKeyDown('C'))
+        {
+            excel.DeleteColumn();
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // Alt + R For Deleting a Row
+
+        else if (IsKeyDown(VK_MENU) && IsKeyDown('R'))
+        {
+            excel.DeleteRow();
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // C + R For Clearing a Row
+
+        else if (IsKeyDown('C') && IsKeyDown('R'))
+        {
+            excel.ClearRow();
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // C + L For Clearing a Column
+
+        else if (IsKeyDown('C') && IsKeyDown('L'))
+        {
+            excel.ClearColumn();
+            excel.displayGrid(excel);
+            excel.setCurrent(excel.getStart());
+            excel.actCol = 3;
+            excel.actRow = 3;
+        }
+
+        // I For Inserting a value into a cell
+
+        else if (IsKeyDown('I'))
+        {
+            string val;
+            cin >> val;
+            if (val.length() < 4 && val.length() > 0)
+                excel.currentCell()->value = val;
+            excel.displayGrid(excel);
+        }
+
+        // B For Selecting RangeStart
+
+        else if (IsKeyDown('B'))
+        {
+            rangeStart = excel.currentCell();
+        }
+
+        // C For Selecting RangeEnd & Copying From RangeStart To RangeEnd
+
+        else if (IsKeyDown('C'))
+        {
+            rangeEnd = excel.currentCell();
+            copyOrCut = excel.Copy(rangeStart, rangeEnd);
+        }
+
+        // X For Selecting RangeEnd & Cut From RangeStart To RangeEnd
+
+        else if (IsKeyDown('X'))
+        {
+            rangeEnd = excel.currentCell();
+            copyOrCut = excel.Cut(rangeStart, rangeEnd);
+            excel.displayGrid(excel);
+        }
+
+        // V For Pasting From RangeStart To RangeEnd
+
+        else if (IsKeyDown('V'))
+        {
+            excel.Paste(copyOrCut);
+            excel.displayGrid(excel);
+        }
+
+        // Alt + S for sum of the desired data
+
+        else if (IsKeyDown(VK_MENU) && IsKeyDown('S'))
+        {
+            double sum = excel.GetRangeSum(rangeStart, rangeEnd);
+            excel.currentCell()->value = to_string(sum);
+            excel.displayGrid(excel);
+        }
+
+        // Alt + A for average of the desired data
+
+        else if (IsKeyDown(VK_MENU) && IsKeyDown('A'))
+        {
+            double average = excel.GetRangeAverage(rangeStart, rangeEnd);
+            excel.currentCell()->value = to_string(average);
+            excel.displayGrid(excel);
+        }
+
+        // Alt + M for maximum of the desired data
+
+        else if (IsKeyDown(VK_MENU) && IsKeyDown('M'))
+        {
+            double maxNo = excel.GetRangeMax(rangeStart, rangeEnd);
+            excel.currentCell()->value = to_string(maxNo);
+            excel.displayGrid(excel);
+        }
+
+        // Alt + M for minimum of the desired data
+
+        else if (IsKeyDown(VK_MENU) && IsKeyDown('N'))
+        {
+            double minNo = excel.GetRangeMin(rangeStart, rangeEnd);
+            excel.currentCell()->value = to_string(minNo);
+            excel.displayGrid(excel);
+        }
+
+        // Ctrl + C for counting of the desired data
+
+        else if (IsKeyDown(VK_MENU) && IsKeyDown('C'))
+        {
+            int count = excel.GetRangeCount(rangeStart, rangeEnd);
+            excel.currentCell()->value = to_string(count);
+            excel.displayGrid(excel);
+        }
+
+        // Ctrl + S for saving/storing the sheet as .csv file
+
+        else if (IsKeyDown(VK_CONTROL) && IsKeyDown('S'))
+        {
+            excel.storeGrid("excelFile.csv");
+        }
+        // Ctrl + S for saving/storing the sheet as .csv file & exit
+
+        else if (IsKeyDown(VK_CONTROL) && IsKeyDown('W'))
+        {
+            excel.storeGrid("excelFile.csv");
+            break;
+        }
+
+        // Escape for exiting the loop
+
+        else if (IsKeyDown(VK_ESCAPE))
+        {
+            break;
+        }
+
+        // Adjust the sleep time to control the frequency of key checks and updates.
+        Sleep(100);
+    }
+}
 
 int main()
 {
     MiniExcel<string> excel;
-    excel.displayGrid();
+    int opt = 0;
+    system("cls");
+    printLogo();
+    while (opt != 3)
+    {
+        opt = printMenu();
+        if (opt == 1)
+        {
+
+            system("cls");
+            excelMenu(excel);
+        }
+        else if (opt == 2)
+        {
+            system("cls");
+            printLogo();
+            instructionsMenu();
+        }
+        cout << "Press any key to continue...";
+        getch();
+    }
 }
