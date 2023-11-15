@@ -21,9 +21,6 @@ enum Color
     Red = 91     // Red text
 };
 
-
-
-
 template <typename T>
 class MiniExcel
 {
@@ -39,53 +36,53 @@ public:
     }
 
     class Iterator
-{
-    typename MiniExcel<T>::Cell *current;
+    {
+        typename MiniExcel<T>::Cell *current;
 
-public:
-    Iterator(typename MiniExcel<T>::Cell *current) : current(current)
-    {
-    }
+    public:
+        Iterator(typename MiniExcel<T>::Cell *current) : current(current)
+        {
+        }
 
-    T &operator*()
-    {
-        if (current)
-            return current->value;
-        throw std::out_of_range("Iterator out of bounds");
-    }
+        T &operator*()
+        {
+            if (current)
+                return current->value;
+            throw std::out_of_range("Iterator out of bounds");
+        }
 
-    Iterator &operator++()
-    {
-        if (current)
-            current = current->down;
-        return *this;
-    }
+        Iterator &operator++()
+        {
+            if (current)
+                current = current->down;
+            return *this;
+        }
 
-    Iterator operator++(int)
-    {
-        if (current)
-            current = current->right;
-        return *this;
-    }
+        Iterator operator++(int)
+        {
+            if (current)
+                current = current->right;
+            return *this;
+        }
 
-    Iterator &operator--()
-    {
-        if (current)
-            current = current->up;
-        return *this;
-    }
-    Iterator &operator--(int)
-    {
-        if (current)
-            current = current->left;
-        return *this;
-    }
+        Iterator &operator--()
+        {
+            if (current)
+                current = current->up;
+            return *this;
+        }
+        Iterator &operator--(int)
+        {
+            if (current)
+                current = current->left;
+            return *this;
+        }
 
-    bool operator!=(const Iterator &other)
-    {
-        return (current != other.current);
-    }
-};
+        bool operator!=(const Iterator &other)
+        {
+            return (current != other.current);
+        }
+    };
     class Cell
     {
 
@@ -345,7 +342,7 @@ public:
 
     Iterator begin()
     {
-        return Iterator (start);
+        return Iterator(start);
     }
     Iterator end()
     {
@@ -594,122 +591,54 @@ public:
 
     // Function to insert a new cell and shift the current cell to right
 
-       void InsertCellByRightShift(T value)
+    void InsertCellByRightShift(Cell *current)
     {
-        Cell *newCell = new Cell(value);
+        if (!current || !current->right)
+        {
+            return;
+        }
+
         Cell *currentCell = current;
-        Cell *cellUpCurrent = currentCell->up;
-        Cell *cellDownCurrent = currentCell->down;
-        Cell *cellRightCurrent = currentCell->right;
-        Cell *cellLeftCurrent = currentCell->left;
-
-        if (start == current)
-            start = newCell;
-        if (!currentCell->right)
+        Cell *tempCell = nullptr;
+        string tempVal = " ";
+        string nextVal = " ";
+        while (currentCell)
         {
-            T val = currentCell->value;
-            currentCell->value = value;
-            currentCell->right = newCell;
-            newCell->left = currentCell;
-            newCell->value = val;
+            nextVal = currentCell->value;
+            currentCell->value = tempVal;
+            tempVal = nextVal;
+            tempCell = currentCell;
+            currentCell = currentCell->right;
         }
-        else
-        {
-            current = newCell;
-            while (currentCell)
-            {
-                newCell->right = currentCell;
-                if (cellLeftCurrent)
-                {
-                    currentCell->left = newCell;
-                    newCell->left = cellLeftCurrent;
-                    cellLeftCurrent->right = newCell;
-                    cellLeftCurrent = cellLeftCurrent->right;
-                }
-                currentCell->left = newCell;
-                newCell = currentCell;
-                currentCell = currentCell->right;
-            }
 
-            newCell = current;
-            while (cellUpCurrent)
-            {
-                newCell->up = cellUpCurrent;
-                cellUpCurrent->down = newCell;
-                cellUpCurrent = cellUpCurrent->right;
-                newCell = newCell->right;
-            }
-            newCell = current;
-            while (cellDownCurrent)
-            {
-                newCell->down = cellDownCurrent;
-                cellDownCurrent->up = newCell;
-                cellDownCurrent = cellDownCurrent->right;
-                newCell = newCell->right;
-            }
-        }
-        cols++;
+        InsertColumnToRight(tempCell);
+        tempCell->right->value = tempVal;
     }
-
 
     // Function to insert a new cell and shift the current cell to down
- void InsertCellByDownShift(T value)
+    void InsertCellByDownShift(Cell *current)
     {
-        Cell *newCell = new Cell(value);
+        if (!current || !current->right)
+        {
+            return;
+        }
+
         Cell *currentCell = current;
-        Cell *cellUpCurrent = currentCell->up;
-        Cell *cellDownCurrent = currentCell->down;
-        Cell *cellLeftCurrent = currentCell->left;
-        Cell *cellRightCurrent = currentCell->right;
-        if (!currentCell->down)
+        Cell *tempCell = nullptr;
+        string tempVal = " ";
+        string nextVal = " ";
+        while (currentCell)
         {
-            T val = currentCell->value;
-            currentCell->value = value;
-            currentCell->down = newCell;
-            newCell->up = currentCell;
-            newCell->value = val;
+            nextVal = currentCell->value;
+            currentCell->value = tempVal;
+            tempVal = nextVal;
+            tempCell = currentCell;
+            currentCell = currentCell->down;
         }
-        else
-        {
-            current = newCell;
-            if (start == current)
-                start = newCell;
 
-            while (currentCell)
-            {
-                newCell->down = currentCell;
-                if (cellUpCurrent)
-                {
-                    currentCell->up = newCell;
-                    cellUpCurrent->down = newCell;
-                    newCell->up = cellUpCurrent;
-                    cellUpCurrent = cellUpCurrent->down;
-                }
-                currentCell->up = newCell;
-                newCell = currentCell;
-                currentCell = currentCell->down;
-            }
-            newCell = current;
-            while (cellLeftCurrent)
-            {
-                newCell->left = cellLeftCurrent;
-                cellLeftCurrent->right = newCell;
-                cellLeftCurrent = cellLeftCurrent->down;
-                newCell = newCell->down;
-            }
-
-            newCell = current;
-            while (cellRightCurrent)
-            {
-                newCell->right = cellRightCurrent;
-                cellRightCurrent->left = newCell;
-                cellRightCurrent = cellRightCurrent->down;
-                newCell = newCell->down;
-            }
-        }
-        rows++;
+        InsertRowBelow(tempCell);
+        tempCell->down->value = tempVal;
     }
-
     // Function to delete the cell and shift the current cell to left
 
     void DeleteCellByLeftShift()
@@ -926,7 +855,7 @@ public:
                     }
                     catch (const invalid_argument &e)
                     {
-                        // Handle non-integer cell values if necessary
+                        return 0.0;
                     }
                 temp = temp->right;
             }
@@ -1327,8 +1256,6 @@ private:
     }
 };
 
-
-
 void printColorText(const std::string &text, int colorCode)
 {
     cout << "\033[38;5;" << colorCode << "m" << text << "\033[0m";
@@ -1492,7 +1419,7 @@ void excelMenu(MiniExcel<string> &excel)
 
         else if (IsKeyDown(VK_SHIFT) && IsKeyDown('R'))
         {
-            excel.InsertCellByRightShift(" ");
+            excel.InsertCellByRightShift(excel.currentCell());
             excel.displayGrid(excel);
             excel.setCurrent(excel.getStart());
             excel.actCol = 3;
@@ -1503,7 +1430,7 @@ void excelMenu(MiniExcel<string> &excel)
 
         else if (IsKeyDown(VK_SHIFT) && IsKeyDown('D'))
         {
-            excel.InsertCellByDownShift(" ");
+            excel.InsertCellByDownShift(excel.currentCell());
             excel.displayGrid(excel);
             excel.setCurrent(excel.getStart());
             excel.actCol = 3;
