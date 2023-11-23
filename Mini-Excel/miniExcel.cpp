@@ -122,7 +122,6 @@ public:
         current = nullptr;
         this->rows = rows;
         this->cols = cols;
-        // if ()
         initializeGrid(rows, cols);
         LoadFile("excelFile.csv");
     }
@@ -176,8 +175,7 @@ public:
 
     void displayGrid(MiniExcel<T> &excel)
     {
-        system("cls"); // Assuming you are using Windows. Use "clear" for Linux/macOS.
-
+        system("cls");
         Cell *currentCell = excel.getStart();
         int x = 3;
         int y = 3;
@@ -223,7 +221,7 @@ public:
                 gotoxy(1, y);
                 cout << "\033[33m" << val;
                 val = val + 1;
-                y += 5;
+                y += 4;
                 H = H->down;
             }
         }
@@ -496,7 +494,10 @@ public:
         if (!current->down)
             current = currentRow->up;
         if (!current->up)
+        {
             current = currentRow->down;
+            start = currentRow->down;
+        }
 
         for (int i = 0; rowAboveCurrent != nullptr && rowBelowCurrent != nullptr; i++)
         {
@@ -1295,47 +1296,48 @@ bool IsKeyDown(int key)
 int printMenu()
 {
     int opt;
-    cout << "\t\t 1. Start" << endl;
-    cout << "\t\t 2. Instructions" << endl;
-    cout << "\t\t 3. Exit" << endl;
-    cout << "\t\t Your Option.... " << endl;
+    cout << "\n\t\t\t\t\t\t\t\t\t 1. Start" << endl;
+    cout << "\t\t\t\t\t\t\t\t\t 2. Instructions" << endl;
+    cout << "\t\t\t\t\t\t\t\t\t 3. Exit" << endl;
+    cout << "\t\t\t\t\t\t\t\t\t Your Option.... ";
     cin >> opt;
     return opt;
 }
 void instructionsMenu()
 {
-    cout << "\t\t\t\t\t\tInstructions!!!\t\t\n"
+    cout << "\n\t\t\t\t\t\t\t\t\tInstructions!!!\t\t\n"
          << endl;
-    cout << " \t\t\tPress UP/DOWN Keys --> To Navigate The Sheet" << endl;
-    cout << " \t\t\tPress I --> To Input The Value in a Cell" << endl;
-    cout << " \t\t\tPress B --> To Select Starting Cell For Copy/Cut/Sum etc" << endl;
-    cout << " \t\t\tPress C --> To Select Ending Cell & Call Copy()" << endl;
-    cout << " \t\t\tPress X --> To Select Ending Cell & Call Cut()" << endl;
-    cout << " \t\t\tPress V --> To Paste The Copy/Cut Data" << endl;
-    cout << " \t\t\tPress Ctrl+A --> To Add Row Above Current Cell" << endl;
-    cout << " \t\t\tPress Ctrl+B --> To Add Row Below Current Cell" << endl;
-    cout << " \t\t\tPress Ctrl+R --> To Add Column Right of Current Cell" << endl;
-    cout << " \t\t\tPress Ctrl+L --> To Add Column Left of Current Cell" << endl;
-    cout << " \t\t\tPress Shift+R --> To Add a Cell & Shift Current Cell To The Right" << endl;
-    cout << " \t\t\tPress Shift+D --> To Add a Cell & Shift Current Cell To The Down" << endl;
-    cout << " \t\t\tPress Shift+L --> To Delete a Cell & Shift Current Cell To The Left" << endl;
-    cout << " \t\t\tPress Shift+U --> To Delete a Cell & Shift Current Cell To The Up" << endl;
-    cout << " \t\t\tPress Alt+R --> To Delete a Row" << endl;
-    cout << " \t\t\tPress Alt+C --> To Delete a Column" << endl;
-    cout << " \t\t\tPress Alt+R --> To Delete a Row" << endl;
-    cout << " \t\t\tPress Alt+C --> To Delete a Column" << endl;
-    cout << " \t\t\tPress Alt+S --> To Get The Sum of Your Desired Data" << endl;
-    cout << " \t\t\tPress Alt+A --> To Get The Average of Your Desired Data" << endl;
-    cout << " \t\t\tPress Alt+M --> To Get The Maximum of Your Desired Data" << endl;
-    cout << " \t\t\tPress Alt+N --> To Get The Minimum of Your Desired Data" << endl;
-    cout << " \t\t\tPress Alt+C --> To Get The Count of Your Desired Data" << endl;
-    cout << " \t\t\tPress Ctrl+S --> To Save The File" << endl;
-    cout << " \t\t\tPress Ctrl+W --> To Save The File & Exit" << endl;
-    cout << " \t\t\tPress Escape --> To Exit" << endl;
+    cout << " \t\t\t\t\t\tPress UP/DOWN Keys --> To Navigate The Sheet" << endl;
+    cout << " \t\t\t\t\t\tPress I --> To Input The Value in a Cell" << endl;
+    cout << " \t\t\t\t\t\tPress B --> To Select Starting Cell For Copy/Cut/Sum etc" << endl;
+    cout << " \t\t\t\t\t\tPress C --> To Select Ending Cell & Call Copy()" << endl;
+    cout << " \t\t\t\t\t\tPress X --> To Select Ending Cell & Call Cut()" << endl;
+    cout << " \t\t\t\t\t\tPress V --> To Paste The Copy/Cut Data" << endl;
+    cout << " \t\t\t\t\t\tPress Ctrl+A --> To Add Row Above Current Cell" << endl;
+    cout << " \t\t\t\t\t\tPress Ctrl+B --> To Add Row Below Current Cell" << endl;
+    cout << " \t\t\t\t\t\tPress Ctrl+R --> To Add Column Right of Current Cell" << endl;
+    cout << " \t\t\t\t\t\tPress Ctrl+L --> To Add Column Left of Current Cell" << endl;
+    cout << " \t\t\t\t\t\tPress Shift+R --> To Add a Cell & Shift Current Cell To The Right" << endl;
+    cout << " \t\t\t\t\t\tPress Shift+D --> To Add a Cell & Shift Current Cell To The Down" << endl;
+    cout << " \t\t\t\t\t\tPress Shift+L --> To Delete a Cell & Shift Current Cell To The Left" << endl;
+    cout << " \t\t\t\t\t\tPress Shift+U --> To Delete a Cell & Shift Current Cell To The Up" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+R --> To Delete a Row" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+C --> To Delete a Column" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+R --> To Delete a Row" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+C --> To Delete a Column" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+S --> To Get The Sum of Your Desired Data" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+A --> To Get The Average of Your Desired Data" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+M --> To Get The Maximum of Your Desired Data" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+N --> To Get The Minimum of Your Desired Data" << endl;
+    cout << " \t\t\t\t\t\tPress Alt+C --> To Get The Count of Your Desired Data" << endl;
+    cout << " \t\t\t\t\t\tPress Ctrl+S --> To Save The File" << endl;
+    cout << " \t\t\t\t\t\tPress Ctrl+W --> To Save The File & Exit" << endl;
+    cout << " \t\t\t\t\t\tPress Escape --> To Exit" << endl;
 }
 
-void excelMenu(MiniExcel<string> &excel)
+void excelMenu()
 {
+    MiniExcel<string> excel;
     vector<string> copyOrCut;
     excel.setCurrent(excel.getCell(0, 0));
     MiniExcel<string>::Cell *rangeStart = nullptr;
@@ -1431,8 +1433,8 @@ void excelMenu(MiniExcel<string> &excel)
         else if (IsKeyDown(VK_SHIFT) && IsKeyDown('D'))
         {
             excel.InsertCellByDownShift(excel.currentCell());
-            excel.displayGrid(excel);
             excel.setCurrent(excel.getStart());
+            excel.displayGrid(excel);
             excel.actCol = 3;
             excel.actRow = 3;
         }
@@ -1442,8 +1444,8 @@ void excelMenu(MiniExcel<string> &excel)
         else if (IsKeyDown(VK_SHIFT) && IsKeyDown('L'))
         {
             excel.DeleteCellByLeftShift();
-            excel.displayGrid(excel);
             excel.setCurrent(excel.getStart());
+            excel.displayGrid(excel);
             excel.actCol = 3;
             excel.actRow = 3;
         }
@@ -1453,8 +1455,8 @@ void excelMenu(MiniExcel<string> &excel)
         else if (IsKeyDown(VK_SHIFT) && IsKeyDown('U'))
         {
             excel.DeleteCellByUpShift();
-            excel.displayGrid(excel);
             excel.setCurrent(excel.getStart());
+            excel.displayGrid(excel);
             excel.actCol = 3;
             excel.actRow = 3;
         }
@@ -1464,8 +1466,8 @@ void excelMenu(MiniExcel<string> &excel)
         else if (IsKeyDown(VK_MENU) && IsKeyDown('C'))
         {
             excel.DeleteColumn();
-            excel.displayGrid(excel);
             excel.setCurrent(excel.getStart());
+            excel.displayGrid(excel);
             excel.actCol = 3;
             excel.actRow = 3;
         }
@@ -1475,8 +1477,8 @@ void excelMenu(MiniExcel<string> &excel)
         else if (IsKeyDown(VK_MENU) && IsKeyDown('R'))
         {
             excel.DeleteRow();
-            excel.displayGrid(excel);
             excel.setCurrent(excel.getStart());
+            excel.displayGrid(excel);
             excel.actCol = 3;
             excel.actRow = 3;
         }
@@ -1619,18 +1621,18 @@ void excelMenu(MiniExcel<string> &excel)
 
 int main()
 {
-    MiniExcel<string> excel;
     int opt = 0;
     system("cls");
-    printLogo();
     while (opt != 3)
     {
+        printLogo();
         opt = printMenu();
         if (opt == 1)
         {
 
             system("cls");
-            excelMenu(excel);
+            // printLogo();
+            excelMenu();
         }
         else if (opt == 2)
         {
@@ -1640,5 +1642,6 @@ int main()
         }
         cout << "Press any key to continue...";
         getch();
+        system("cls");
     }
 }
