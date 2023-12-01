@@ -230,8 +230,8 @@ public:
     void printCell(Cell *temp, int x, int y)
     {
         gotoxy(x, y);
-        printCellBorder(x, y);
         temp->setColor(Blue);
+        printCellBorder(x, y);
         gotoxy(x + 3, y + 2);
         cout << "\033[34m";
         printDataInCell(temp);
@@ -1514,6 +1514,7 @@ void excelMenu()
             if (val.length() < 4 && val.length() > 0)
                 excel.currentCell()->value = val;
             excel.displayGrid(excel);
+            cin.clear();
         }
 
         // B For Selecting RangeStart
