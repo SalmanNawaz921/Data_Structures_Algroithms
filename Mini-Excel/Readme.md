@@ -28,7 +28,7 @@ The primary objective of Mini-Excel Manager is to offer an interactive and effic
 Refer to the instructions menu (as provided in the initial post) for a comprehensive guide on navigating, inputting data, and utilizing various functionalities within Mini-Excel Manager.
 
 ### Contribute and Explore:
-Feel free to explore the codebase on [GitHub](insert your GitHub link) and contribute to the enhancement of Mini-Excel Manager. Whether you're a seasoned developer or just starting, your input is valued in making this tool even more powerful.
+Feel free to explore the codebase and contribute to the enhancement of Mini-Excel Manager. Whether you're a seasoned developer or just starting, your input is valued in making this tool even more powerful.
 
 Join us on this coding adventure, where data management becomes a breeze! 🚀👩‍💻
 
