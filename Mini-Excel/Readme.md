@@ -33,6 +33,6 @@ Feel free to explore the codebase and contribute to the enhancement of Mini-Exce
 Join us on this coding adventure, where data management becomes a breeze! 🚀👩‍💻
 
 ## Credits
-A special thanks to [Insert Teacher's Name] for their invaluable guidance and support throughout this project.
+A special thanks to Muhammad Faraz for their invaluable guidance and support throughout this project.
 
 Happy coding! 📊💡
